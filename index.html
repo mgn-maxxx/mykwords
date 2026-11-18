@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ff6fa5">
+<meta name="apple-mobile-web-app-title" content="스샷단어장">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>스샷 단어장 | スクショ単語帳</title>
+<style>
+:root{--bg:#fff7fb;--card:#fff;--ink:#2b2230;--sub:#8a7d91;--line:#f3e2ec;--pink:#ff6fa5;--pink2:#ffe3ef;--ok:#2fbf8f;--ng:#ff5c6c;--shadow:0 2px 12px rgba(255,111,165,.10)}
+@media (prefers-color-scheme:dark){:root{--bg:#16121a;--card:#221b27;--ink:#f4ebf6;--sub:#a99bb0;--line:#352a3d;--pink:#ff80b2;--pink2:#3b2436;--shadow:none}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Apple SD Gothic Neo","Noto Sans KR","Noto Sans JP",sans-serif;font-size:16px;line-height:1.6;padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.top h1{margin:0;font-size:18px;letter-spacing:.02em}
+.top small{color:var(--sub);font-size:12px}
+main{padding:12px 14px;max-width:680px;margin:0 auto}
+.view{display:none}.view.active{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+h2{font-size:16px;margin:4px 2px 10px}
+h3{font-size:14px;margin:14px 0 6px;color:var(--sub)}
+textarea,input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;-webkit-appearance:none;appearance:none}
+textarea{min-height:90px;resize:vertical}
+input[type=checkbox]{width:22px;height:22px;-webkit-appearance:auto;appearance:auto;accent-color:var(--pink);flex:none}
+label.chk{display:flex;align-items:center;gap:10px;padding:6px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{flex:1;min-height:46px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:15px;padding:8px 12px;display:inline-flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--pink);border-color:var(--pink);color:#fff}
+.btn.danger{color:var(--ng)}
+.btn:disabled{opacity:.5}
+.mini{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 11px;font:inherit;font-size:13px;cursor:pointer}
+.muted{color:var(--sub);font-size:13px}
+#status{min-height:0;margin:0 2px 10px;font-size:14px;color:var(--sub)}
+#status:empty{display:none}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--pink2);border-top-color:var(--pink);border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.thumb{position:relative;display:inline-block;margin-top:10px}
+.thumb img{max-height:120px;border-radius:10px;border:1px solid var(--line)}
+.thumb button{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:none;background:var(--ink);color:var(--card);font-size:13px}
+.welcome{background:var(--pink2);border-color:transparent}
+.meta{color:var(--sub);font-size:12px;margin:0 4px 6px}
+.words{display:flex;flex-wrap:wrap;gap:8px 6px}
+.chip{font:inherit;font-size:21px;line-height:1.35;color:var(--ink);background:color-mix(in srgb,var(--c) 15%,transparent);border:none;border-bottom:3px solid var(--c);border-radius:8px 8px 4px 4px;padding:2px 7px;position:relative;cursor:pointer}
+.chip:active{transform:scale(.96)}
+.chip.known::after{content:'';position:absolute;top:-4px;right:-4px;width:9px;height:9px;border-radius:50%;background:var(--pink);border:2px solid var(--card)}
+.tr{color:var(--sub);margin-top:10px;font-size:15px}
+.acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+details.gram{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+details summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+.g{margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:12px}
+.g b{color:var(--pink)}
+.g p{margin:4px 0 0;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.legend span{font-size:12px;padding:1px 8px;border-radius:6px;background:color-mix(in srgb,var(--c) 15%,transparent);border-bottom:2px solid var(--c)}
+.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:10}
+.tabs button{flex:1;border:none;background:none;color:var(--sub);font:inherit;font-size:11px;padding:7px 0 5px;display:flex;flex-direction:column;align-items:center;gap:0;cursor:pointer}
+.tabs button span{font-size:22px;line-height:1.3;filter:grayscale(.6);opacity:.8}
+.tabs button.active{color:var(--pink);font-weight:700}
+.tabs button.active span{filter:none;opacity:1}
+#sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.38);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow:auto;-webkit-overflow-scrolling:touch;background:var(--card);border-radius:22px 22px 0 0;padding:6px 18px calc(20px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .25s ease;z-index:21;max-width:680px;margin:0 auto}
+body.sheet-open{overflow:hidden}
+body.sheet-open #sheet{transform:none}
+body.sheet-open #sheet-bg{opacity:1;pointer-events:auto}
+.grab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:6px auto 12px}
+.tag{display:inline-block;font-size:12px;padding:1px 9px;border-radius:999px;background:color-mix(in srgb,var(--c,#868e96) 18%,transparent);margin-right:4px}
+.big{font-size:30px;font-weight:700;margin:6px 0 2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lemma{font-size:15px;color:var(--sub)}
+.lemma b{color:var(--ink);font-size:18px}
+.mean{font-size:18px;font-weight:700;margin:10px 0 6px}
+.nuance{background:var(--pink2);border-radius:12px;padding:8px 11px;font-size:14px;margin:8px 0}
+.morph{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin:10px 0}
+.morph span{display:flex;flex-direction:column;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px 9px}
+.morph span b{font-size:18px}
+.morph span small{font-size:11px;color:var(--sub)}
+.morph i{color:var(--sub);font-style:normal}
+.ctx{font-size:14px;color:var(--sub);margin:8px 0;padding-left:10px;border-left:3px solid var(--line)}
+mark{background:color-mix(in srgb,var(--pink) 30%,transparent);color:inherit;border-radius:4px;padding:0 2px}
+.seen{font-size:13px;color:var(--pink);font-weight:700;margin-top:6px}
+.list-item{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.list-item:last-child{border-bottom:none}
+.list-item .main{flex:1;min-width:0}
+.list-item .t1{font-size:18px;font-weight:700;display:flex;align-items:center;gap:6px}
+.list-item .t2{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.star{background:none;border:none;font-size:22px;padding:4px;cursor:pointer;filter:grayscale(1);opacity:.35}
+.star.on{filter:none;opacity:1}
+.cnt{font-size:12px;color:var(--sub);white-space:nowrap}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.empty{text-align:center;color:var(--sub);padding:30px 10px;font-size:14px}
+.q-prompt{font-size:30px;font-weight:800;text-align:center;margin:18px 0 6px;word-break:keep-all}
+.q-prompt.ja{font-size:22px}
+.q-prompt.cloze{font-size:20px;font-weight:700;text-align:left}
+.q-hint{text-align:center;color:var(--sub);font-size:14px;margin-bottom:14px}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;min-height:52px;font-size:17px;font-weight:600;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;font-family:inherit;cursor:pointer}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.opt.wrong{border-color:var(--ng);background:color-mix(in srgb,var(--ng) 12%,transparent)}
+.progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:4px 0 6px}
+.progress div{height:100%;background:var(--pink);transition:width .3s}
+.score{font-size:46px;font-weight:800;text-align:center;color:var(--pink);margin:10px 0}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px;word-break:break-all;margin-top:6px}
+#toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:#2b2230;color:#fff;padding:10px 16px;border-radius:14px;font-size:14px;opacity:0;transition:.25s;z-index:40;max-width:88vw;text-align:center;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:none;border-radius:9px;padding:8px 4px;font:inherit;font-size:14px;color:var(--sub);cursor:pointer}
+.seg button.on{background:var(--card);color:var(--pink);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+</style>
+</head>
+<body>
+<header class="top"><h1>스샷 단어장 📸</h1><small id="topInfo"></small></header>
+
+<main>
+  <!-- 分析 -->
+  <section id="v-analyze" class="view active">
+    <div id="welcome"></div>
+    <div class="card">
+      <textarea id="inText" placeholder="韓国語の文を貼り付けるか、スクショを選んでね📸✨"></textarea>
+      <div id="imgPreview"></div>
+      <div class="row">
+        <label class="btn" for="inImage">📸 スクショ</label>
+        <input type="file" id="inImage" accept="image/*" hidden>
+        <button class="btn" id="btnPaste">📋 貼り付け</button>
+      </div>
+      <div class="row"><button class="btn primary" id="btnAnalyze">✨ 分析する</button></div>
+    </div>
+    <div id="status"></div>
+    <div id="result"></div>
+  </section>
+
+  <!-- 履歴 -->
+  <section id="v-history" class="view">
+    <div class="card">
+      <input id="histSearch" type="search" placeholder="🔍 履歴を検索（韓国語・日本語どっちでも）">
+    </div>
+    <div class="card" id="histList"></div>
+  </section>
+
+  <!-- 単語帳 -->
+  <section id="v-vocab" class="view">
+    <div class="card">
+      <input id="vocSearch" type="search" placeholder="🔍 単語・意味で検索">
+      <div class="ctrl">
+        <select id="vocFilter">
+          <option value="all">ぜんぶ</option>
+          <option value="star">⭐ お気に入り</option>
+          <option value="weak">😵 苦手</option>
+          <option value="slang">🔥 スラング・慣用句</option>
+        </select>
+        <select id="vocSort">
+          <option value="new">新しい順</option>
+          <option value="count">よく出会う順</option>
+          <option value="weak">苦手順</option>
+          <option value="abc">가나다順</option>
+        </select>
+      </div>
+      <div class="muted" id="vocCount" style="margin-top:8px"></div>
+    </div>
+    <div class="card" id="vocList"></div>
+  </section>
+
+  <!-- クイズ -->
+  <section id="v-quiz" class="view">
+    <div id="quizBox"></div>
+  </section>
+
+  <!-- 設定 -->
+  <section id="v-settings" class="view">
+    <div id="settingsBox"></div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-view="analyze" class="active"><span>✨</span>分析</button>
+  <button data-view="history"><span>🕘</span>履歴</button>
+  <button data-view="vocab"><span>📚</span>単語帳</button>
+  <button data-view="quiz"><span>🎯</span>クイズ</button>
+  <button data-view="settings"><span>⚙️</span>設定</button>
+</nav>
+
+<div id="sheet-bg"></div>
+<div id="sheet"><div class="grab"></div><div id="sheet-body"></div></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   스샷 단어장 — スクショ→韓国語分析→単語帳
+   データはこの端末のブラウザ(localStorage)にだけ保存されます。
+   ========================================================= */
+const STORE_KEY = 'kvapp_v1';
+const POS_COLORS = {
+  '名詞':'#ff6fa5','代名詞':'#ff9cc3','数詞':'#f7a1b5','動詞':'#4f8dff','形容詞':'#22b383',
+  '存在詞':'#3fb6cf','指定詞':'#8f9bab','副詞':'#ff9a3c','冠形詞':'#b07cff','感嘆詞':'#e8b500',
+  '助詞':'#a7aeb6','語尾':'#a7aeb6','接辞':'#a7aeb6','慣用句':'#e64980','その他':'#868e96'
+};
+const POS_LIST = Object.keys(POS_COLORS);
+const LEVELS = ['初級','中級','上級','スラング・ネット語','慣用句'];
+const NON_CONTENT = ['助詞','語尾','接辞','その他'];
+const MODELS = ['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-3-flash-preview','gemini-3.1-flash-lite'];
+const DEFAULT_SETTINGS = { apiKey:'', model:'gemini-2.5-flash', fallback:true, autoAddLevel:'advanced', tapAdd:true, deepTarget:'claude', autoRun:true };
+
+/* ---------- 保存まわり ---------- */
+let state = load();
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+    return { history:s.history||[], vocab:s.vocab||{}, settings:Object.assign({}, DEFAULT_SETTINGS, s.settings||{}) };
+  }catch(e){ return { history:[], vocab:{}, settings:{...DEFAULT_SETTINGS} }; }
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ toast('保存できなかった…容量いっぱいかも😢 設定からバックアップ→古い履歴を消してね', 5000); }
+}
+
+/* ---------- 小物 ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const col = p => POS_COLORS[p] || '#868e96';
+const isContent = w => w && w.lemma && !NON_CONTENT.includes(w.pos);
+function fmtDate(iso){ const d=new Date(iso); const p=n=>String(n).padStart(2,'0'); return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+let toastTimer;
+function toast(msg, ms=2600){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), ms); }
+function setStatus(html){ $('#status').innerHTML = html || ''; }
+function highlight(sentence, surface){
+  const s = esc(sentence), w = esc(surface);
+  return w && s.includes(w) ? s.split(w).join(`<mark>${w}</mark>`) : s;
+}
+function speak(text){
+  if(!('speechSynthesis' in window)){ toast('この端末は読み上げ非対応みたい🥲'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang='ko-KR'; u.rate=0.9;
+  const v = speechSynthesis.getVoices().find(v=>v.lang && v.lang.startsWith('ko')); if(v) u.voice=v;
+  speechSynthesis.speak(u);
+}
+function deepDive(prompt){
+  // ※ユーザー操作の中で同期的に開く（iOSのポップアップブロック対策）
+  const enc = encodeURIComponent(prompt);
+  const url = state.settings.deepTarget==='chatgpt' ? 'https://chatgpt.com/?q='+enc : 'https://claude.ai/new?q='+enc;
+  if(navigator.clipboard) navigator.clipboard.writeText(prompt).catch(()=>{});
+  window.open(url, '_blank');
+  toast('質問文コピーしたよ📋 入ってなかったら貼り付けてね', 3500);
+}
+
+/* ---------- タブ ---------- */
+function show(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='v-'+view));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  if(view==='analyze') renderWelcome();
+  if(view==='history') renderHistory();
+  if(view==='vocab') renderVocab();
+  if(view==='quiz' && !quiz) renderQuizHome();
+  if(view==='settings') renderSettings();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click', ()=>show(b.dataset.view)));
+function updateTop(){ $('#topInfo').textContent = `📚 ${Object.keys(state.vocab).length}語`; }
+
+/* ---------- シート ---------- */
+function openSheet(html){ $('#sheet-body').innerHTML = html; $('#sheet').scrollTop = 0; document.body.classList.add('sheet-open'); }
+function closeSheet(){ document.body.classList.remove('sheet-open'); }
+$('#sheet-bg').addEventListener('click', closeSheet);
+$('#sheet-body').addEventListener('click', e=>{
+  const t = e.target.closest('[data-say-text]'); if(t) speak(t.dataset.sayText);
+});
+
+/* =========================================================
+   Gemini 呼び出し
+   ========================================================= */
+const SYS = `あなたは、日本語ネイティブの上級韓国語学習者（TOPIK6級）を手伝う韓国語チューターです。
+入力はSNS・動画の字幕・Webページなどのスクリーンショット由来のテキスト（または画像そのもの）です。
+
+ルール:
+- 韓国語の文だけを取り出して分析する。ユーザー名、@ID、時刻、いいね・RT数、ボタン名、広告、メニューなどUIのノイズは無視。日本語や英語だけの行も無視。
+- 1文が途中で改行されていたら自然につなげる。OCRの明らかな読み間違いは直してよい。
+- sentences[].text: 韓国語の1文。translation: 自然な日本語訳（くだけた文はくだけた日本語で）。
+- words: 分かち書き（スペース）単位＝어절ごとに1要素。句読点・絵文字・記号だけのものは除く。
+  - surface: 文中の形そのまま
+  - lemma: 中心となる単語の辞書形（例: 먹었어요→먹다、학교에서→학교、갓생→갓생）
+  - pos: 中心となる単語の品詞
+  - morphemes: 形態素に分けて、それぞれの役割を日本語で短く（例: 먹/動詞語幹、었/過去、어요/해요体語尾）
+  - meaning: この文脈での意味を日本語で簡潔に
+  - level: 初級/中級/上級/スラング・ネット語/慣用句 のどれか
+  - nuance: スラング・ネット用語・略語・新語・方言・敬語レベル・語感・語源など、上級者が知りたい補足。特になければ空文字。
+- grammar: 文中の文法・表現パターン（例: -더라고요、-는 바람에、慣用句）を、上級者向けに要点を絞って日本語で解説。-아요 のような基本すぎるものは省く。なければ空配列。
+- 韓国語の文が見つからなければ sentences は空配列。`;
+
+const SCHEMA = {
+  type:'OBJECT',
+  properties:{
+    sentences:{ type:'ARRAY', items:{ type:'OBJECT',
+      properties:{
+        text:{type:'STRING'},
+        translation:{type:'STRING'},
+        words:{ type:'ARRAY', items:{ type:'OBJECT',
+          properties:{
+            surface:{type:'STRING'}, lemma:{type:'STRING'},
+            pos:{type:'STRING', enum:POS_LIST},
+            meaning:{type:'STRING'},
+            level:{type:'STRING', enum:LEVELS},
+            nuance:{type:'STRING'},
+            morphemes:{ type:'ARRAY', items:{ type:'OBJECT', properties:{ form:{type:'STRING'}, role:{type:'STRING'} }, required:['form','role'] } }
+          },
+          required:['surface','lemma','pos','meaning','level','nuance','morphemes'] } },
+        grammar:{ type:'ARRAY', items:{ type:'OBJECT',
+          properties:{ pattern:{type:'STRING'}, meaning:{type:'STRING'}, explanation:{type:'STRING'} },
+          required:['pattern','meaning','explanation'] } }
+      },
+      required:['text','translation','words','grammar'] } }
+  },
+  required:['sentences']
+};
+
+async function callGemini(parts){
+  const s = state.settings;
+  const chain = [s.model];
+  if(s.fallback) MODELS.forEach(m=>{ if(!chain.includes(m)) chain.push(m); });
+  let lastErr;
+  for(const model of chain){
+    setStatus(`<span class="spin"></span>${esc(model)} で分析中…🤖`);
+    let res;
+    try{
+      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'x-goog-api-key':s.apiKey },
+        body: JSON.stringify({
+          systemInstruction:{ parts:[{text:SYS}] },
+          contents:[{ role:'user', parts }],
+          generationConfig:{ responseMimeType:'application/json', responseSchema:SCHEMA, temperature:0.2 }
+        })
+      });
+    }catch(e){ lastErr = new Error('通信エラー📡 電波を確認してね'); break; }
+
+    if(res.ok){
+      const data = await res.json();
+      const cand = data.candidates && data.candidates[0];
+      const txt = ((cand && cand.content && cand.content.parts) || []).filter(p=>!p.thought && p.text).map(p=>p.text).join('');
+      if(!txt){ lastErr = new Error('AIから空の返事が来た…（'+((cand&&cand.finishReason)||(data.promptFeedback&&data.promptFeedback.blockReason)||'理由不明')+'）'); continue; }
+      try{ const j = JSON.parse(txt); j._model = model; return j; }
+      catch(e){ lastErr = new Error('AIの返事が読めなかった…もう一回試してみて🙏'); continue; }
+    }
+    let msg = '';
+    try{ msg = ((await res.json()).error || {}).message || ''; }catch(e){}
+    if((res.status===400 || res.status===403) && /api key|API_KEY|permission/i.test(msg)){
+      throw new Error('APIキーが違うみたい🔑 設定を確認してね');
+    }
+    lastErr = new Error(res.status===429 ? '無料枠の回数制限にかかったかも⏳ 少し待ってからもう一回やってね' : `エラー ${res.status}（${model}）: ${msg.slice(0,140)}`);
+  }
+  throw lastErr || new Error('分析できなかった…🥲');
+}
+
+/* =========================================================
+   分析
+   ========================================================= */
+let pendingImage = null;   // {mime, data, url}
+let currentEntry = null;
+let busyNow = false;
+
+async function analyze(){
+  if(busyNow) return;
+  const text = $('#inText').value.trim();
+  if(!text && !pendingImage){ toast('文かスクショを入れてね📝'); return; }
+  if(!state.settings.apiKey){ toast('先に設定でGeminiのAPIキーを入れてね🔑'); show('settings'); return; }
+
+  // 同じ文はAIに聞かずに保存済みを表示（節約）
+  if(!pendingImage){
+    const hit = state.history.find(h => h.input === text);
+    if(hit){ toast('前に分析した文だよ〜📚 保存済みの結果を出すね'); renderResult(hit); return; }
+  }
+
+  const parts = [];
+  if(pendingImage) parts.push({ inlineData:{ mimeType:pendingImage.mime, data:pendingImage.data } });
+  parts.push({ text: pendingImage ? (text ? '画像内の韓国語を分析して。補足テキスト:\n'+text : '画像内の韓国語を読み取って分析して。') : text });
+
+  busyNow = true; $('#btnAnalyze').disabled = true;
+  try{
+    const r = await callGemini(parts);
+    const sentences = (r.sentences || []).filter(s => s && s.words);
+    if(!sentences.length){ setStatus('韓国語の文が見つからなかった🥲 文字が小さすぎるかも？'); return; }
+    const entry = {
+      id: Date.now().toString(36),
+      at: new Date().toISOString(),
+      input: text || sentences.map(s=>s.text).join('\n'),
+      source: pendingImage ? 'image' : 'text',
+      model: r._model,
+      sentences
+    };
+    state.history.unshift(entry);
+    autoAdd(entry);
+    save(); updateTop();
+    clearImage(); $('#inText').value = '';
+    setStatus('');
+    renderResult(entry);
+  }catch(e){
+    setStatus('⚠️ ' + esc(e.message));
+  }finally{
+    busyNow = false; $('#btnAnalyze').disabled = false;
+  }
+}
+
+function renderResult(entry){
+  currentEntry = entry;
+  const html = entry.sentences.map((s,si)=>`
+    <div class="card">
+      <div class="words">${(s.words||[]).map((w,wi)=>`<button class="chip ${state.vocab[w.lemma]?'known':''}" style="--c:${col(w.pos)}" data-si="${si}" data-wi="${wi}">${esc(w.surface)}</button>`).join('')}</div>
+      <div class="tr">${esc(s.translation)}</div>
+      <div class="acts">
+        <button class="mini" data-say="${si}">🔊 読む</button>
+        <button class="mini" data-deep="${si}">🔍 文ごと深掘り</button>
+      </div>
+      ${(s.grammar||[]).length ? `<details class="gram" open><summary>📖 文法・表現（${s.grammar.length}）</summary>
+        ${s.grammar.map(g=>`<div class="g"><b>${esc(g.pattern)}</b>　${esc(g.meaning)}<p>${esc(g.explanation)}</p></div>`).join('')}
+      </details>` : ''}
+    </div>`).join('');
+  $('#result').innerHTML =
+    `<div class="meta">${fmtDate(entry.at)}${entry.source==='image'?' · 📸':''}${entry.model?' · '+esc(entry.model):''}　<span style="color:var(--pink)">●</span>=単語帳にある</div>`
+    + html
+    + `<details class="card"><summary>🎨 品詞の色</summary><div class="legend">${POS_LIST.filter(p=>!['語尾','接辞'].includes(p)).map(p=>`<span style="--c:${col(p)}">${p}</span>`).join('')}</div></details>`;
+}
+function refreshChips(){
+  document.querySelectorAll('#result .chip').forEach(c=>{
+    const w = currentEntry.sentences[c.dataset.si].words[c.dataset.wi];
+    c.classList.toggle('known', !!state.vocab[w.lemma]);
+  });
+}
+
+$('#result').addEventListener('click', e=>{
+  if(!currentEntry) return;
+  const chip = e.target.closest('.chip');
+  if(chip){ openWord(currentEntry, +chip.dataset.si, +chip.dataset.wi); return; }
+  const say = e.target.closest('[data-say]');
+  if(say){ speak(currentEntry.sentences[+say.dataset.say].text); return; }
+  const deep = e.target.closest('[data-deep]');
+  if(deep){
+    const s = currentEntry.sentences[+deep.dataset.deep];
+    deepDive(`次の韓国語の文を、TOPIK6級の学習者向けに詳しく解説して（日本語で）。\n・直訳と自然な訳\n・ニュアンスや言い回しのポイント\n・スラングや省略があればその説明\n\n文: ${s.text}`);
+  }
+});
+
+function openWord(entry, si, wi){
+  const s = entry.sentences[si], w = s.words[wi];
+  if(state.settings.tapAdd && !state.vocab[w.lemma] && isContent(w)){
+    addVocab(w, s, entry); save(); updateTop(); refreshChips();
+    toast('📚 単語帳に入れたよ');
+  }
+  const draw = ()=>{
+    const v = state.vocab[w.lemma];
+    openSheet(`
+      <div><span class="tag" style="--c:${col(w.pos)}">${esc(w.pos)}</span><span class="tag">${esc(w.level)}</span></div>
+      <div class="big">${esc(w.surface)} <button class="mini" data-say-text="${esc(w.surface)}">🔊</button></div>
+      <div class="lemma">原形　<b>${esc(w.lemma)}</b> <button class="mini" data-say-text="${esc(w.lemma)}">🔊</button></div>
+      <div class="mean">${esc(w.meaning)}</div>
+      ${w.nuance ? `<div class="nuance">💡 ${esc(w.nuance)}</div>` : ''}
+      ${(w.morphemes||[]).length ? `<div class="morph">${w.morphemes.map(m=>`<span><b>${esc(m.form)}</b><small>${esc(m.role)}</small></span>`).join('<i>+</i>')}</div>` : ''}
+      <div class="ctx">${highlight(s.text, w.surface)}<br>${esc(s.translation)}</div>
+      ${v ? `<div class="seen">📚 単語帳にあるよ・出会った回数 ${v.count}回</div>` : ''}
+      <div class="row">
+        <button class="btn ${v?'':'primary'}" id="sw-toggle">${v ? '単語帳から外す' : '📚 単語帳に追加'}</button>
+        <button class="btn" id="sw-deep">🔍 深掘り</button>
+      </div>`);
+    $('#sw-toggle').onclick = ()=>{
+      if(state.vocab[w.lemma]){ delete state.vocab[w.lemma]; toast('外したよ👋'); }
+      else { addVocab(w, s, entry); toast('📚 追加したよ'); }
+      save(); updateTop(); refreshChips(); draw();
+    };
+    $('#sw-deep').onclick = ()=> deepDive(`次の韓国語の文の「${w.surface}」（原形: ${w.lemma}）について、TOPIK6級の学習者向けに日本語で詳しく解説して。\n・この文脈での意味とニュアンス\n・似た表現との違い\n・よく使う場面と例文を2〜3個\n\n文: ${s.text}`);
+  };
+  draw();
+}
+
+/* ---------- 単語帳への登録 ---------- */
+function addVocab(w, s, entry){
+  const k = w.lemma, now = new Date().toISOString();
+  let v = state.vocab[k];
+  if(!v){
+    v = state.vocab[k] = { lemma:k, pos:w.pos, meanings:[], nuance:w.nuance||'', level:w.level, examples:[], count:0, star:false, addedAt:now, lastSeen:now, ok:0, ng:0 };
+  }
+  if(w.meaning && !v.meanings.includes(w.meaning)){ v.meanings.push(w.meaning); if(v.meanings.length>4) v.meanings.shift(); }
+  if(!v.nuance && w.nuance) v.nuance = w.nuance;
+  if(!v.examples.some(e=>e.sentence===s.text)){
+    v.examples.unshift({ sentence:s.text, translation:s.translation, surface:w.surface, at:now, hid:entry && entry.id });
+    v.examples = v.examples.slice(0,5);
+    v.count++;
+  }
+  v.lastSeen = now;
+  return v;
+}
+function autoAdd(entry){
+  const lv = state.settings.autoAddLevel;
+  const ok = lv==='all' ? w=>isContent(w)
+          : lv==='intermediate' ? w=>isContent(w) && w.level!=='初級'
+          : lv==='advanced' ? w=>isContent(w) && ['上級','スラング・ネット語','慣用句'].includes(w.level)
+          : ()=>false;
+  entry.sentences.forEach(s=>(s.words||[]).forEach(w=>{
+    if(state.vocab[w.lemma] || ok(w)) addVocab(w, s, entry);   // 既にある単語は「出会った回数」を更新
+  }));
+}
+
+/* ---------- 入力まわり ---------- */
+function loadImg(src){ return new Promise((ok,ng)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ng; i.src=src; }); }
+async function shrink(blob){
+  const src = URL.createObjectURL(blob);
+  const img = await loadImg(src);
+  const max = 2000, sc = Math.min(1, max/Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  URL.revokeObjectURL(src);
+  const url = c.toDataURL('image/jpeg', 0.85);
+  return { url, mime:'image/jpeg', data:url.split(',')[1] };
+}
+async function setImage(blob){
+  try{
+    pendingImage = await shrink(blob);
+    $('#imgPreview').innerHTML = `<div class="thumb"><img src="${pendingImage.url}" alt=""><button id="imgX" aria-label="画像を外す">✕</button></div>`;
+    $('#imgX').onclick = clearImage;
+    if(state.settings.autoRun && state.settings.apiKey) analyze();
+  }catch(e){ toast('画像が読めなかった🥲'); }
+}
+function clearImage(){ pendingImage = null; $('#imgPreview').innerHTML = ''; }
+$('#inImage').addEventListener('change', e=>{ const f = e.target.files[0]; if(f) setImage(f); e.target.value = ''; });
+$('#btnAnalyze').addEventListener('click', analyze);
+$('#btnPaste').addEventListener('click', async ()=>{
+  try{
+    if(navigator.clipboard && navigator.clipboard.read){
+      const items = await navigator.clipboard.read();
+      for(const it of items){
+        const imgType = it.types.find(t=>t.startsWith('image/'));
+        if(imgType){ setImage(await it.getType(imgType)); return; }
+        if(it.types.includes('text/plain')){
+          $('#inText').value = await (await it.getType('text/plain')).text();
+          if(state.settings.autoRun && state.settings.apiKey) analyze();
+          return;
+        }
+      }
+    }
+    const t = await navigator.clipboard.readText();
+    if(t){ $('#inText').value = t; if(state.settings.autoRun && state.settings.apiKey) analyze(); }
+  }catch(e){ toast('貼り付けできなかった…入力欄を長押しして「ペースト」してね🙏', 3500); }
+});
+
+function renderWelcome(){
+  const el = $('#welcome');
+  if(state.settings.apiKey){ el.innerHTML=''; return; }
+  el.innerHTML = `<div class="card welcome"><b>はじめまして〜💖</b><br>まずは⚙️設定で <b>GeminiのAPIキー</b> を入れてね🔑<div class="row"><button class="btn primary" id="goSet">設定をひらく</button></div></div>`;
+  $('#goSet').onclick = ()=>show('settings');
+}
+
+/* =========================================================
+   履歴
+   ========================================================= */
+$('#histSearch').addEventListener('input', renderHistory);
+function renderHistory(){
+  const q = $('#histSearch').value.trim();
+  const list = state.history.filter(h => !q || h.input.includes(q) || h.sentences.some(s => s.text.includes(q) || (s.translation||'').includes(q)));
+  const el = $('#histList');
+  if(!state.history.length){ el.innerHTML = '<div class="empty">まだ履歴がないよ〜📭<br>スクショを分析するとここに全部残るよ✨</div>'; return; }
+  if(!list.length){ el.innerHTML = '<div class="empty">見つからなかった🥲</div>'; return; }
+  el.innerHTML = list.slice(0,300).map(h=>`
+    <div class="list-item" data-id="${h.id}">
+      <div class="main">
+        <div class="t2">${fmtDate(h.at)} ${h.source==='image'?'📸':'📝'} · ${h.sentences.length}文</div>
+        <div style="font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.sentences[0] ? h.sentences[0].text : h.input)}</div>
+        <div class="t2">${esc(h.sentences[0] ? h.sentences[0].translation : '')}</div>
+      </div>
+      <button class="mini" data-del="${h.id}" aria-label="削除">🗑</button>
+    </div>`).join('');
+}
+$('#histList').addEventListener('click', e=>{
+  const del = e.target.closest('[data-del]');
+  if(del){
+    e.stopPropagation();
+    if(confirm('この履歴を消す？（単語帳はそのまま残るよ）')){
+      state.history = state.history.filter(h=>h.id!==del.dataset.del); save(); renderHistory();
+    }
+    return;
+  }
+  const it = e.target.closest('.list-item');
+  if(it){ const h = state.history.find(x=>x.id===it.dataset.id); if(h){ show('analyze'); setStatus(''); renderResult(h); } }
+});
+
+/* =========================================================
+   単語帳
+   ========================================================= */
+['#vocSearch','#vocFilter','#vocSort'].forEach(id=>$(id).addEventListener('input', renderVocab));
+function vocabArray(){ return Object.values(state.vocab); }
+const weakScore = v => (v.ng||0)*2 - (v.ok||0);
+function renderVocab(){
+  const q = $('#vocSearch').value.trim(), f = $('#vocFilter').value, srt = $('#vocSort').value;
+  let list = vocabArray().filter(v =>
+    (!q || v.lemma.includes(q) || v.meanings.join(' ').includes(q) || v.examples.some(e=>e.sentence.includes(q))) &&
+    (f!=='star' || v.star) &&
+    (f!=='weak' || (v.ng||0) > 0) &&
+    (f!=='slang' || ['スラング・ネット語','慣用句'].includes(v.level))
+  );
+  const sorters = {
+    new:(a,b)=>b.addedAt.localeCompare(a.addedAt),
+    count:(a,b)=>b.count-a.count || b.lastSeen.localeCompare(a.lastSeen),
+    weak:(a,b)=>weakScore(b)-weakScore(a),
+    abc:(a,b)=>a.lemma.localeCompare(b.lemma,'ko')
+  };
+  list.sort(sorters[srt]);
+  $('#vocCount').textContent = `${list.length}語 / ぜんぶで${vocabArray().length}語`;
+  const el = $('#vocList');
+  if(!vocabArray().length){ el.innerHTML = '<div class="empty">まだ単語がないよ〜📭<br>分析画面で単語をタップすると入るよ✨</div>'; return; }
+  if(!list.length){ el.innerHTML = '<div class="empty">見つからなかった🥲</div>'; return; }
+  el.innerHTML = list.slice(0,500).map(v=>`
+    <div class="list-item" data-k="${esc(v.lemma)}">
+      <span class="dot" style="--c:${col(v.pos)}"></span>
+      <div class="main">
+        <div class="t1">${esc(v.lemma)}</div>
+        <div class="t2">${esc(v.meanings.join(' / '))}</div>
+      </div>
+      <span class="cnt">${v.count}回${v.ng?` · ❌${v.ng}`:''}</span>
+      <button class="star ${v.star?'on':''}" data-star="${esc(v.lemma)}" aria-label="お気に入り">⭐</button>
+    </div>`).join('');
+}
+$('#vocList').addEventListener('click', e=>{
+  const st = e.target.closest('[data-star]');
+  if(st){ e.stopPropagation(); const v = state.vocab[st.dataset.star]; v.star = !v.star; save(); st.classList.toggle('on', v.star); return; }
+  const it = e.target.closest('.list-item');
+  if(it) openVocab(it.dataset.k);
+});
+function openVocab(k){
+  const v = state.vocab[k]; if(!v) return;
+  openSheet(`
+    <div><span class="tag" style="--c:${col(v.pos)}">${esc(v.pos)}</span><span class="tag">${esc(v.level)}</span></div>
+    <div class="big">${esc(v.lemma)} <button class="mini" data-say-text="${esc(v.lemma)}">🔊</button></div>
+    <div class="mean">${esc(v.meanings.join(' / '))}</div>
+    ${v.nuance ? `<div class="nuance">💡 ${esc(v.nuance)}</div>` : ''}
+    <h3>出会った文（${v.count}回）</h3>
+    ${v.examples.map(e=>`<div class="ctx">${highlight(e.sentence, e.surface)} <button class="mini" data-say-text="${esc(e.sentence)}">🔊</button><br>${esc(e.translation)}<br><small>${fmtDate(e.at)}</small></div>`).join('')}
+    <div class="muted" style="margin-top:8px">登録 ${fmtDate(v.addedAt)} · クイズ ⭕${v.ok||0} ❌${v.ng||0}</div>
+    <div class="row">
+      <button class="btn" id="vs-star">${v.star ? '⭐ お気に入り解除' : '⭐ お気に入り'}</button>
+      <button class="btn" id="vs-deep">🔍 深掘り</button>
+    </div>
+    <div class="row"><button class="btn danger" id="vs-del">🗑 単語帳から消す</button></div>`);
+  $('#vs-star').onclick = ()=>{ v.star = !v.star; save(); renderVocab(); openVocab(k); };
+  $('#vs-deep').onclick = ()=> deepDive(`韓国語「${v.lemma}」について、TOPIK6級の学習者向けに日本語で詳しく解説して。\n・意味とニュアンス（${v.meanings.join(' / ')} 以外の意味も）\n・似た表現との違い\n・よく使う場面と例文を2〜3個${v.examples[0] ? `\n\n出会った文: ${v.examples[0].sentence}` : ''}`);
+  $('#vs-del').onclick = ()=>{ if(confirm(`「${v.lemma}」を単語帳から消す？`)){ delete state.vocab[k]; save(); updateTop(); renderVocab(); closeSheet(); } };
+}
+
+/* =========================================================
+   クイズ
+   ========================================================= */
+let quiz = null;
+let quizOpt = { mode:'ko2ja', range:'all', n:10 };
+function renderQuizHome(){
+  quiz = null;
+  const all = vocabArray();
+  const box = $('#quizBox');
+  if(all.length < 4){
+    box.innerHTML = `<div class="card"><div class="empty">クイズは単語が4つ以上たまったら遊べるよ🎯<br>いま ${all.length}語！</div></div>`;
+    return;
+  }
+  const seg = (key, items) => `<div class="seg" data-key="${key}">${items.map(([v,l])=>`<button data-v="${v}" class="${quizOpt[key]==v?'on':''}">${l}</button>`).join('')}</div>`;
+  box.innerHTML = `
+    <div class="card">
+      <h2>🎯 確認クイズ</h2>
+      <h3>出題のしかた</h3>
+      ${seg('mode', [['ko2ja','韓→日'],['ja2ko','日→韓'],['cloze','例文穴埋め']])}
+      <h3>範囲</h3>
+      ${seg('range', [['all','ぜんぶ'],['recent','最近の30語'],['star','⭐だけ'],['weak','苦手だけ']])}
+      <h3>問題数</h3>
+      ${seg('n', [[5,'5問'],[10,'10問'],[20,'20問']])}
+      <div class="row"><button class="btn primary" id="qStart">スタート🔥</button></div>
+      <p class="muted">間違えた単語ほど出やすくなるよ😈</p>
+    </div>`;
+  box.querySelectorAll('.seg').forEach(sg=>sg.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    const key = sg.dataset.key; quizOpt[key] = key==='n' ? +b.dataset.v : b.dataset.v;
+    sg.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+  }));
+  $('#qStart').onclick = startQuiz;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function startQuiz(){
+  const all = vocabArray();
+  let pool = all;
+  if(quizOpt.range==='star') pool = all.filter(v=>v.star);
+  if(quizOpt.range==='weak') pool = all.filter(v=>(v.ng||0)>0);
+  if(quizOpt.range==='recent') pool = [...all].sort((a,b)=>b.addedAt.localeCompare(a.addedAt)).slice(0,30);
+  if(quizOpt.mode==='cloze') pool = pool.filter(v=>v.examples.some(e=>e.sentence.includes(e.surface)));
+  if(!pool.length){ toast('その範囲には単語がないよ🥲'); return; }
+  // 苦手・お気に入りほど出やすい重み付き抽選
+  const weighted = pool.map(v=>({ v, w: Math.max(0.3, 1 + (v.ng||0)*1.5 - (v.ok||0)*0.4 + (v.star?1:0)) }));
+  const picked = [];
+  while(picked.length < Math.min(quizOpt.n, pool.length)){
+    const total = weighted.reduce((s,x)=>s+x.w, 0);
+    let r = Math.random()*total, idx = 0;
+    while(r > weighted[idx].w){ r -= weighted[idx].w; idx++; }
+    picked.push(weighted.splice(idx,1)[0].v);
+  }
+  quiz = { qs: picked.map(v=>makeQ(v, all)), i:0, score:0, wrong:[] };
+  drawQ();
+}
+function makeQ(v, all){
+  const others = shuffle(all.filter(x=>x.lemma!==v.lemma));
+  const samePos = others.filter(x=>x.pos===v.pos);
+  const pickD = (fn) => {
+    const seen = new Set([fn(v)]), out = [];
+    for(const x of [...samePos, ...others]){ const val = fn(x); if(!seen.has(val)){ seen.add(val); out.push(val); } if(out.length===3) break; }
+    return out;
+  };
+  const m = x => x.meanings[0] || '';
+  if(quizOpt.mode==='ko2ja') return { v, prompt:v.lemma, cls:'', hint:'意味はどれ？', ans:m(v), opts:shuffle([m(v), ...pickD(m)]) };
+  if(quizOpt.mode==='ja2ko') return { v, prompt:m(v), cls:'ja', hint:'韓国語でどれ？', ans:v.lemma, opts:shuffle([v.lemma, ...pickD(x=>x.lemma)]) };
+  const ex = v.examples.find(e=>e.sentence.includes(e.surface));
+  return { v, prompt: esc(ex.sentence).split(esc(ex.surface)).join('<mark>＿＿＿</mark>'), raw:true, cls:'cloze', hint:ex.translation, ans:v.lemma, opts:shuffle([v.lemma, ...pickD(x=>x.lemma)]), ex };
+}
+function drawQ(){
+  const q = quiz.qs[quiz.i];
+  $('#quizBox').innerHTML = `
+    <div class="card">
+      <div class="muted">${quiz.i+1} / ${quiz.qs.length}　⭕ ${quiz.score}</div>
+      <div class="progress"><div style="width:${quiz.i/quiz.qs.length*100}%"></div></div>
+      <div class="q-prompt ${q.cls}">${q.raw ? q.prompt : esc(q.prompt)}</div>
+      <div class="q-hint">${esc(q.hint)}</div>
+      ${q.opts.map((o,i)=>`<button class="opt" data-i="${i}">${esc(o)}</button>`).join('')}
+      <div id="qFb"></div>
+      <div class="row"><button class="btn" id="qQuit">やめる</button></div>
+    </div>`;
+  if(quizOpt.mode==='ko2ja') speak(q.v.lemma);
+  $('#qQuit').onclick = renderQuizHome;
+  document.querySelectorAll('.opt').forEach(b=>b.onclick = ()=>answer(b, q));
+}
+function answer(btn, q){
+  if(q.done) return; q.done = true;
+  const right = q.opts[+btn.dataset.i] === q.ans;
+  document.querySelectorAll('.opt').forEach(b=>{ if(q.opts[+b.dataset.i]===q.ans) b.classList.add('right'); });
+  const v = state.vocab[q.v.lemma];
+  if(right){ quiz.score++; if(v) v.ok=(v.ok||0)+1; }
+  else { btn.classList.add('wrong'); quiz.wrong.push(q.v.lemma); if(v) v.ng=(v.ng||0)+1; }
+  save();
+  const ex = q.v.examples[0];
+  $('#qFb').innerHTML = `
+    <div class="nuance" style="margin-top:12px">${right?'⭕ せいかい〜！✨':'❌ おしい！'}　<b>${esc(q.v.lemma)}</b> = ${esc(q.v.meanings.join(' / '))}
+    ${ex ? `<div class="ctx" style="margin-bottom:0">${highlight(ex.sentence, ex.surface)}</div>` : ''}</div>
+    <div class="row"><button class="btn primary" id="qNext">${quiz.i+1<quiz.qs.length?'次へ →':'結果を見る🎉'}</button></div>`;
+  $('#qNext').onclick = ()=>{ quiz.i++; quiz.i < quiz.qs.length ? drawQ() : drawResult(); };
+}
+function drawResult(){
+  const n = quiz.qs.length, sc = quiz.score;
+  const msg = sc===n ? 'パーフェクト〜！天才すぎ😍💯' : sc/n>=0.7 ? 'いい感じ〜！✨' : '伸びしろしかない💪🔥';
+  $('#quizBox').innerHTML = `
+    <div class="card">
+      <div class="score">${sc} / ${n}</div>
+      <div style="text-align:center;font-weight:700">${msg}</div>
+      ${quiz.wrong.length ? `<h3>間違えた単語</h3>${quiz.wrong.map(k=>{ const v=state.vocab[k]; return v?`<div class="list-item" data-k="${esc(k)}"><div class="main"><div class="t1">${esc(k)}</div><div class="t2">${esc(v.meanings.join(' / '))}</div></div></div>`:''; }).join('')}` : ''}
+      <div class="row"><button class="btn" id="qHome">もどる</button><button class="btn primary" id="qAgain">もう一回🔁</button></div>
+    </div>`;
+  $('#qHome').onclick = renderQuizHome;
+  $('#qAgain').onclick = startQuiz;
+  $('#quizBox').querySelectorAll('[data-k]').forEach(el=>el.onclick=()=>openVocab(el.dataset.k));
+}
+
+/* =========================================================
+   設定
+   ========================================================= */
+function renderSettings(){
+  const s = state.settings;
+  const kb = Math.round((localStorage.getItem(STORE_KEY)||'').length*2/1024);
+  const base = location.origin + location.pathname;
+  $('#settingsBox').innerHTML = `
+    <div class="card">
+      <h2>🔑 Gemini APIキー</h2>
+      <input id="sKey" type="password" autocomplete="off" placeholder="AIza... を貼り付け" value="${esc(s.apiKey)}">
+      <div class="row"><button class="btn primary" id="sKeySave">保存</button><button class="btn" id="sKeyTest">接続テスト</button></div>
+      <p class="muted">キーは <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> で無料で作れるよ。キーはこのiPhoneの中にだけ保存されて、Google以外には送られないよ🔒</p>
+    </div>
+    <div class="card">
+      <h2>🤖 AIモデル</h2>
+      <input id="sModel" list="modelList" value="${esc(s.model)}">
+      <datalist id="modelList">${MODELS.map(m=>`<option value="${m}">`).join('')}</datalist>
+      <label class="chk"><input type="checkbox" id="sFallback" ${s.fallback?'checked':''}> 回数制限やエラーの時はほかのモデルで自動リトライ</label>
+      <p class="muted">「モデルがない」系のエラーが出たら、AI Studioで今使えるモデル名を見て入れ替えてね。</p>
+    </div>
+    <div class="card">
+      <h2>📚 単語帳への自動追加</h2>
+      <select id="sAuto">
+        <option value="advanced" ${s.autoAddLevel==='advanced'?'selected':''}>上級・スラング・慣用句だけ自動で入れる</option>
+        <option value="intermediate" ${s.autoAddLevel==='intermediate'?'selected':''}>中級以上を自動で入れる</option>
+        <option value="all" ${s.autoAddLevel==='all'?'selected':''}>ぜんぶ自動で入れる</option>
+        <option value="none" ${s.autoAddLevel==='none'?'selected':''}>自動では入れない</option>
+      </select>
+      <label class="chk"><input type="checkbox" id="sTap" ${s.tapAdd?'checked':''}> タップした単語は単語帳に入れる（＝わからなかった単語）</label>
+      <label class="chk"><input type="checkbox" id="sAutoRun" ${s.autoRun?'checked':''}> スクショ・貼り付け・ショートカットから来たらすぐ分析</label>
+    </div>
+    <div class="card">
+      <h2>🔍 深掘りボタンの行き先</h2>
+      <select id="sDeep">
+        <option value="claude" ${s.deepTarget==='claude'?'selected':''}>Claude</option>
+        <option value="chatgpt" ${s.deepTarget==='chatgpt'?'selected':''}>ChatGPT</option>
+      </select>
+    </div>
+    <div class="card">
+      <h2>⚡ ショートカット用URL</h2>
+      <p class="muted">ショートカットの「テキスト」にこれを入れて、後ろに抽出したテキスト（URLエンコード済み）をつなげてね👇</p>
+      <div class="code">${esc(base)}?t=</div>
+      <div class="row"><button class="btn" id="sCopyUrl">📋 コピー</button></div>
+    </div>
+    <div class="card">
+      <h2>💾 データ</h2>
+      <p class="muted">履歴 ${state.history.length}件 · 単語 ${vocabArray().length}語 · 使用量 約${kb}KB（目安の上限 5000KB）</p>
+      <div class="row"><button class="btn" id="sBackup">⬇️ バックアップ</button><label class="btn" for="sImport">⬆️ 読み込み</label><input type="file" id="sImport" accept="application/json,.json" hidden></div>
+      <div class="row"><button class="btn" id="sCsv">📄 単語帳をCSVで書き出す（Notion用）</button></div>
+      <div class="row"><button class="btn danger" id="sOldHist">🧹 30日より前の履歴を消す</button></div>
+      <div class="row"><button class="btn danger" id="sWipe">⚠️ ぜんぶ消す</button></div>
+      <p class="muted">バックアップにAPIキーは入らないよ。iPhoneはしばらく開かないサイトのデータを消すことがあるから、たまにバックアップしてね🙏</p>
+    </div>`;
+
+  const saveS = ()=>{
+    s.model = $('#sModel').value.trim() || DEFAULT_SETTINGS.model;
+    s.fallback = $('#sFallback').checked; s.autoAddLevel = $('#sAuto').value;
+    s.tapAdd = $('#sTap').checked; s.autoRun = $('#sAutoRun').checked; s.deepTarget = $('#sDeep').value;
+    save();
+  };
+  ['#sModel','#sFallback','#sAuto','#sTap','#sAutoRun','#sDeep'].forEach(id=>$(id).addEventListener('change', ()=>{ saveS(); toast('保存したよ✅'); }));
+  $('#sKeySave').onclick = ()=>{ s.apiKey = $('#sKey').value.trim(); save(); toast(s.apiKey ? 'キー保存したよ🔑✨' : 'キーを消したよ'); };
+  $('#sKeyTest').onclick = async ()=>{
+    s.apiKey = $('#sKey').value.trim(); save();
+    if(!s.apiKey){ toast('キーを入れてね🔑'); return; }
+    toast('テスト中…⏳', 6000);
+    try{ const r = await callGemini([{text:'안녕하세요'}]); setStatus(''); toast(`つながった〜！🎉（${r._model}）`, 3500); }
+    catch(e){ setStatus(''); toast('⚠️ '+e.message, 5000); }
+  };
+  $('#sCopyUrl').onclick = ()=>{ navigator.clipboard.writeText(base+'?t=').then(()=>toast('コピーしたよ📋')).catch(()=>toast('コピーできなかった…長押しで選んでね')); };
+  $('#sBackup').onclick = ()=>{
+    const data = { app:'sshot-danojang', version:1, exportedAt:new Date().toISOString(), history:state.history, vocab:state.vocab,
+                   settings:{ ...state.settings, apiKey:'' } };
+    exportFile(`sshot-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(data), 'application/json');
+  };
+  $('#sImport').onchange = async e=>{
+    const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+    try{
+      const d = JSON.parse(await f.text());
+      if(!d.vocab || !d.history) throw 0;
+      if(!confirm(`履歴${d.history.length}件・単語${Object.keys(d.vocab).length}語を読み込むよ。\n今のデータは置き換わるけどOK？`)) return;
+      state.history = d.history; state.vocab = d.vocab;
+      state.settings = Object.assign({}, state.settings, d.settings||{}, { apiKey: state.settings.apiKey });
+      save(); updateTop(); renderSettings(); toast('読み込んだよ✅');
+    }catch(err){ toast('このファイルは読めなかった🥲'); }
+  };
+  $('#sCsv').onclick = ()=>{
+    const q = v => '"' + String(v ?? '').replace(/"/g,'""').replace(/\r?\n/g,' ') + '"';
+    const rows = [['単語','品詞','意味','補足','レベル','例文','例文の訳','出会った回数','お気に入り','クイズ正解','クイズ不正解','登録日']];
+    vocabArray().forEach(v=>rows.push([v.lemma, v.pos, v.meanings.join(' / '), v.nuance, v.level,
+      v.examples[0]?v.examples[0].sentence:'', v.examples[0]?v.examples[0].translation:'', v.count, v.star?'Yes':'No', v.ok||0, v.ng||0, v.addedAt.slice(0,10)]));
+    exportFile(`sshot-vocab-${new Date().toISOString().slice(0,10)}.csv`, '﻿' + rows.map(r=>r.map(q).join(',')).join('\n'), 'text/csv');
+  };
+  $('#sOldHist').onclick = ()=>{
+    const lim = Date.now() - 30*864e5;
+    const n = state.history.filter(h=>new Date(h.at).getTime() < lim).length;
+    if(!n){ toast('30日より前の履歴はないよ👌'); return; }
+    if(confirm(`${n}件の履歴を消す？（単語帳はそのまま残るよ）`)){ state.history = state.history.filter(h=>new Date(h.at).getTime() >= lim); save(); renderSettings(); toast('すっきり✨'); }
+  };
+  $('#sWipe').onclick = ()=>{
+    if(!confirm('履歴と単語帳をぜんぶ消すよ。元に戻せないけど本当にOK？')) return;
+    if(!confirm('ほんとのほんとに？😱（先にバックアップした？）')) return;
+    state.history = []; state.vocab = {}; save(); updateTop(); renderSettings(); toast('ぜんぶ消したよ');
+  };
+}
+async function exportFile(name, content, mime){
+  const blob = new Blob([content], { type:mime });
+  try{
+    const file = new File([blob], name, { type:mime });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){ await navigator.share({ files:[file], title:name }); return; }
+  }catch(e){ if(e && e.name==='AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* =========================================================
+   起動
+   ========================================================= */
+(function init(){
+  updateTop(); renderWelcome();
+  if('speechSynthesis' in window) speechSynthesis.getVoices();
+  const p = new URLSearchParams(location.search);
+  const t = p.get('t') || p.get('text');
+  if(t){
+    history.replaceState(null, '', location.pathname);   // 再読み込みで二重分析しないように
+    $('#inText').value = t;
+    if(state.settings.autoRun && state.settings.apiKey) analyze();
+  }
+})();
+</script>
+</body>
+</html>
