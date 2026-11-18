@@ -46,6 +46,7 @@ label.chk{display:flex;align-items:center;gap:10px;padding:6px 0}
 .words{display:flex;flex-wrap:wrap;gap:8px 6px}
 .chip{font:inherit;font-size:21px;line-height:1.35;color:var(--ink);background:color-mix(in srgb,var(--c) 15%,transparent);border:none;border-bottom:3px solid var(--c);border-radius:8px 8px 4px 4px;padding:2px 7px;position:relative;cursor:pointer}
 .chip:active{transform:scale(.96)}
+.chip.raw{background:transparent;border:1px dashed var(--line);border-bottom:3px dashed var(--c);color:var(--sub)}
 .chip.known::after{content:'';position:absolute;top:-4px;right:-4px;width:9px;height:9px;border-radius:50%;background:var(--pink);border:2px solid var(--card)}
 .tr{color:var(--sub);margin-top:10px;font-size:15px}
 .acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
@@ -278,7 +279,7 @@ const SYS = `あなたは、日本語ネイティブの上級韓国語学習者�
 - 韓国語の文だけを取り出して分析する。ユーザー名、@ID、時刻、いいね・RT数、ボタン名、広告、メニューなどUIのノイズは無視。日本語や英語だけの行も無視。
 - 1文が途中で改行されていたら自然につなげる。OCRの明らかな読み間違いは直してよい。
 - sentences[].text: 韓国語の1文。translation: 自然な日本語訳（くだけた文はくだけた日本語で）。
-- words: 分かち書き（スペース）単位＝어절ごとに1要素。句読点・絵文字・記号だけのものは除く。
+- words: 分かち書き（スペース）単位＝어절ごとに1要素。【重要】文中のすべての어절を、文中の順番どおりに、1つも省略せずに入れること（基本語・数字付きの語・助詞や語尾がついた語も全部）。句読点・絵文字・記号だけのものは除く。
   - surface: 文中の形そのまま
   - lemma: 中心となる単語の辞書形（例: 먹었어요→먹다、학교에서→학교、갓생→갓생）
   - pos: 中心となる単語の品詞
@@ -402,11 +403,33 @@ async function analyze(){
   }
 }
 
+/* 原文をスペースで区切って、AIの分析結果と1つずつ対応づける（AIが飛ばした語もチップにする） */
+const stripP = t => t.replace(/[^\p{L}\p{N}]/gu, '');
+function alignWords(s){
+  const toks = (s.text||'').split(/\s+/).filter(Boolean);
+  const words = s.words || [];
+  const out = []; let j = 0;
+  for(const tok of toks){
+    const clean = stripP(tok);
+    if(!clean) continue;
+    let found = -1;
+    for(let k=j; k<words.length && k<j+4; k++){
+      const sf = stripP(words[k].surface||'');
+      if(sf && (sf===clean || (sf.length>=2 && (clean.includes(sf) || sf.includes(clean))))){ found = k; break; }
+    }
+    if(found>=0){ out.push({ wi:found }); j = found+1; }
+    else out.push({ raw:clean, pos:out.filter(o=>o.wi!==undefined).length });
+  }
+  return out.length ? out : words.map((w,wi)=>({wi}));
+}
 function renderResult(entry){
   currentEntry = entry;
   const html = entry.sentences.map((s,si)=>`
     <div class="card">
-      <div class="words">${(s.words||[]).map((w,wi)=>`<button class="chip ${state.vocab[w.lemma]?'known':''}" style="--c:${col(w.pos)}" data-si="${si}" data-wi="${wi}">${esc(w.surface)}</button>`).join('')}</div>
+      <div class="words">${alignWords(s).map(o=> o.wi!==undefined
+        ? (w=>`<button class="chip ${state.vocab[w.lemma]?'known':''}" style="--c:${col(w.pos)}" data-si="${si}" data-wi="${o.wi}">${esc(w.surface)}</button>`)(s.words[o.wi])
+        : `<button class="chip raw" style="--c:#868e96" data-si="${si}" data-raw="${esc(o.raw)}" data-at="${o.pos}">${esc(o.raw)}</button>`
+      ).join('')}</div>
       <div class="tr">${esc(s.translation)}</div>
       <div class="acts">
         <button class="mini" data-say="${si}">🔊 読む</button>
@@ -417,12 +440,30 @@ function renderResult(entry){
       </details>` : ''}
     </div>`).join('');
   $('#result').innerHTML =
-    `<div class="meta">${fmtDate(entry.at)}${entry.source==='image'?' · 📸':''}${entry.model?' · '+esc(entry.model):''}　<span style="color:var(--pink)">●</span>=単語帳にある</div>`
+    `<div class="meta">${fmtDate(entry.at)}${entry.source==='image'?' · 📸':''}${entry.model?' · '+esc(entry.model):''}　<span style="color:var(--pink)">●</span>=単語帳にある　点線=タップで分析</div>`
     + html
     + `<details class="card"><summary>🎨 品詞の色</summary><div class="legend">${POS_LIST.filter(p=>!['語尾','接辞'].includes(p)).map(p=>`<span style="--c:${col(p)}">${p}</span>`).join('')}</div></details>`;
 }
+/* AIが飛ばした語をタップしたら、その語だけ追加で分析する */
+async function analyzeOne(entry, si, raw, at){
+  if(busyNow) return;
+  if(!state.settings.apiKey){ toast('先に設定でAPIキーを入れてね🔑'); return; }
+  const s = entry.sentences[si];
+  busyNow = true;
+  try{
+    const r = await callGemini([{ text:`次の文の中の「${raw}」という어절だけを分析して。sentences は1要素（text はこの文そのまま、translation も入れる）、words には「${raw}」の1要素だけ、grammar は空配列でよい。\n\n文: ${s.text}` }]);
+    const w = r.sentences && r.sentences[0] && r.sentences[0].words && r.sentences[0].words[0];
+    if(!w) throw new Error('この語はうまく分析できなかった🥲');
+    w.surface = w.surface || raw;
+    s.words.splice(Math.min(at, s.words.length), 0, w);
+    save(); setStatus('');
+    renderResult(entry);
+    openWord(entry, si, s.words.indexOf(w));
+  }catch(e){ setStatus('⚠️ '+esc(e.message)); }
+  finally{ busyNow = false; }
+}
 function refreshChips(){
-  document.querySelectorAll('#result .chip').forEach(c=>{
+  document.querySelectorAll('#result .chip:not(.raw)').forEach(c=>{
     const w = currentEntry.sentences[c.dataset.si].words[c.dataset.wi];
     c.classList.toggle('known', !!state.vocab[w.lemma]);
   });
@@ -430,6 +471,8 @@ function refreshChips(){
 
 $('#result').addEventListener('click', e=>{
   if(!currentEntry) return;
+  const rawChip = e.target.closest('.chip.raw');
+  if(rawChip){ analyzeOne(currentEntry, +rawChip.dataset.si, rawChip.dataset.raw, +rawChip.dataset.at); return; }
   const chip = e.target.closest('.chip');
   if(chip){ openWord(currentEntry, +chip.dataset.si, +chip.dataset.wi); return; }
   const say = e.target.closest('[data-say]');
