@@ -556,35 +556,47 @@ async function shrink(blob){
   const url = c.toDataURL('image/jpeg', 0.85);
   return { url, mime:'image/jpeg', data:url.split(',')[1] };
 }
-async function setImage(blob){
+async function setImage(blob, force){
   try{
     pendingImage = await shrink(blob);
     $('#imgPreview').innerHTML = `<div class="thumb"><img src="${pendingImage.url}" alt=""><button id="imgX" aria-label="画像を外す">✕</button></div>`;
     $('#imgX').onclick = clearImage;
-    if(state.settings.autoRun && state.settings.apiKey) analyze();
+    if((force || state.settings.autoRun) && state.settings.apiKey) analyze();
   }catch(e){ toast('画像が読めなかった🥲'); }
 }
 function clearImage(){ pendingImage = null; $('#imgPreview').innerHTML = ''; }
 $('#inImage').addEventListener('change', e=>{ const f = e.target.files[0]; if(f) setImage(f); e.target.value = ''; });
 $('#btnAnalyze').addEventListener('click', analyze);
-$('#btnPaste').addEventListener('click', async ()=>{
+async function doPaste(force){
   try{
     if(navigator.clipboard && navigator.clipboard.read){
       const items = await navigator.clipboard.read();
       for(const it of items){
         const imgType = it.types.find(t=>t.startsWith('image/'));
-        if(imgType){ setImage(await it.getType(imgType)); return; }
+        if(imgType){ await setImage(await it.getType(imgType), force); return; }
         if(it.types.includes('text/plain')){
           $('#inText').value = await (await it.getType('text/plain')).text();
-          if(state.settings.autoRun && state.settings.apiKey) analyze();
+          if((force || state.settings.autoRun) && state.settings.apiKey) analyze();
           return;
         }
       }
+      toast('コピーした画像や文字が見つからなかった🥲', 3500); return;
     }
     const t = await navigator.clipboard.readText();
-    if(t){ $('#inText').value = t; if(state.settings.autoRun && state.settings.apiKey) analyze(); }
-  }catch(e){ toast('貼り付けできなかった…入力欄を長押しして「ペースト」してね🙏', 3500); }
-});
+    if(t){ $('#inText').value = t; if((force || state.settings.autoRun) && state.settings.apiKey) analyze(); }
+  }catch(e){ toast('貼り付けできなかった…「ペースト」を許可してね🙏（入力欄を長押しでもOK）', 4000); }
+}
+$('#btnPaste').addEventListener('click', ()=>doPaste(false));
+
+/* ショートカットから ?paste=1 で来た時：大きいボタン1タップでクリップボードの画像を読む */
+function showPasteGate(){
+  const g = document.createElement('div');
+  g.style.cssText = 'position:fixed;inset:0;z-index:50;background:rgba(40,20,40,.55);display:flex;align-items:center;justify-content:center;padding:24px';
+  g.innerHTML = '<div class="card" style="max-width:340px;width:100%;text-align:center;margin:0"><div style="font-size:44px">☁️</div><h2 style="margin:6px 0">スクショ受け取り中〜</h2><p class="muted">下のボタンをタップして、「ペースト」を許可してね📋</p><button class="btn primary" id="gateGo" style="width:100%;min-height:58px;font-size:18px">📋 タップして分析スタート</button><button class="btn" id="gateX" style="width:100%;margin-top:8px">キャンセル</button></div>';
+  document.body.appendChild(g);
+  $('#gateGo').onclick = async ()=>{ g.remove(); await doPaste(true); };
+  $('#gateX').onclick = ()=> g.remove();
+}
 
 function renderWelcome(){
   const el = $('#welcome');
@@ -926,7 +938,10 @@ async function exportFile(name, content, mime){
   if('speechSynthesis' in window) speechSynthesis.getVoices();
   const p = new URLSearchParams(location.search);
   const t = p.get('t') || p.get('text');
-  if(t){
+  if(p.get('paste')){
+    history.replaceState(null, '', location.pathname);
+    if(state.settings.apiKey) showPasteGate(); else { toast('先に設定でAPIキーを入れてね🔑'); show('settings'); }
+  } else if(t){
     history.replaceState(null, '', location.pathname);   // 再読み込みで二重分析しないように
     $('#inText').value = t;
     if(state.settings.autoRun && state.settings.apiKey) analyze();
